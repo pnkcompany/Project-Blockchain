@@ -6,7 +6,10 @@ const GENESIS_DATA = {
   lastHash: '-------',
   hash: 'hash-one',
   difficulty: INITIAL_DIFFICULTY,
+  nonce: 0,
   data: [],
 };
 
-module.exports = { GENESIS_DATA };
+const STARTING_BALANCE = 1000;
+
+module.exports = { GENESIS_DATA, MINE_RATE, STARTING_BALANCE };
