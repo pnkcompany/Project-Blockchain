@@ -1,10 +1,4 @@
-const PubNub = require('pubnub');
-
-const credentials = {
-  publishKey: 'pub-c-98c49560-3f9b-4433-9b31-75c07ba7f4be',
-  subscribeKey: 'sub-c-e246441c-1f32-4fde-96d9-9807d707739a',
-  secretKey: 'sec-c-ZDQ4MTg2YTctYjZkMS00MjNmLWFhNDUtMmJhNDZiZDRiZmY0',
-};
+const redis = require('redis');
 
 const CHANNELS = {
   TEST: 'TEST',
@@ -13,77 +7,53 @@ const CHANNELS = {
 };
 
 class PubSub {
-  constructor({ blockchain, transactionPool, wallet }) {
+  constructor({ blockchain, transactionPool, redisUrl }) {
     this.blockchain = blockchain;
     this.transactionPool = transactionPool;
-    this.wallet = wallet;
 
-    this.pubnub = new PubNub(credentials);
+    this.publisher = redis.createClient(redisUrl);
+    this.subscriber = redis.createClient(redisUrl);
 
-    this.pubnub.subscribe({ channels: Object.values(CHANNELS) });
+    this.subscribeToChannels();
 
-    this.pubnub.addListener(this.listener());
+    this.subscriber.on('message', (channel, message) =>
+      this.handleMessage(channel, message)
+    );
   }
 
-  broadcastChain() {
-    this.publish({
-      channel: CHANNELS.BLOCKCHAIN,
-      message: JSON.stringify(this.blockchain.chain),
-    });
-  }
+  handleMessage(channel, message) {
+    console.log(`Message received. Channel: ${channel}. Message: ${message}.`);
 
-  broadcastTransaction(transaction) {
-    this.publish({
-      channel: CHANNELS.TRANSACTION,
-      message: JSON.stringify(transaction),
-    });
+    const parsedMessage = JSON.parse(message);
+
+    switch (channel) {
+      case CHANNELS.BLOCKCHAIN:
+        this.blockchain.replaceChain(parsedMessage, true, () => {
+          this.transactionPool.clearBlockchainTransactions({
+            chain: parsedMessage,
+          });
+        });
+        break;
+      case CHANNELS.TRANSACTION:
+        this.transactionPool.setTransaction(parsedMessage);
+        break;
+      default:
+        return;
+    }
   }
 
   subscribeToChannels() {
-    this.pubnub.subscribe({
-      channels: [Object.values(CHANNELS)],
+    Object.values(CHANNELS).forEach((channel) => {
+      this.subscriber.subscribe(channel);
     });
   }
 
-  listener() {
-    return {
-      message: (messageObject) => {
-        const { channel, message } = messageObject;
-
-        console.log(
-          `Message received. Channel: ${channel}. Message: ${message}`
-        );
-        const parsedMessage = JSON.parse(message);
-
-        switch (channel) {
-          case CHANNELS.BLOCKCHAIN:
-            this.blockchain.replaceChain(parsedMessage, true, () => {
-              this.transactionPool.clearBlockchainTransactions({
-                chain: parsedMessage,
-              });
-            });
-            break;
-          case CHANNELS.TRANSACTION:
-            if (
-              !this.transactionPool.existingTransaction({
-                inputAddress: this.wallet.publicKey,
-              })
-            ) {
-              this.transactionPool.setTransaction(parsedMessage);
-            }
-            break;
-          default:
-            return;
-        }
-      },
-    };
-  }
-
   publish({ channel, message }) {
-    // there is an unsubscribe function in pubnub
-    // but it doesn't have a callback that fires after success
-    // therefore, redundant publishes to the same local subscriber will be accepted as noisy no-ops
-    this.pubnub.publish({ message, channel });
+    this.subscriber.unsubscribe(channel, () => {
+      this.publisher.publish(channel, message, () => {
+        this.subscriber.subscribe(channel);
+      });
+    });
   }
 
   broadcastChain() {

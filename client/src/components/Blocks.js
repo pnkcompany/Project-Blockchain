@@ -7,7 +7,7 @@ class Blocks extends Component {
   state = { blocks: [], paginatedId: 1, blocksLength: 0 };
 
   componentDidMount() {
-    fetch('http://localhost:3000/api/blocks/length')
+    fetch(`${document.location.origin}/api/blocks/length`)
       .then((response) => response.json())
       .then((json) => this.setState({ blocksLength: json }));
 
@@ -15,7 +15,7 @@ class Blocks extends Component {
   }
 
   fetchPaginatedBlocks = (paginatedId) => () => {
-    fetch('http://localhost:3000/api/blocks/${paginatedId}')
+    fetch(`${document.location.origin}/api/blocks/${paginatedId}`)
       .then((response) => response.json())
       .then((json) => this.setState({ blocks: json }));
   };
@@ -39,7 +39,7 @@ class Blocks extends Component {
                   key={key}
                   onClick={this.fetchPaginatedBlocks(paginatedId)}
                 >
-                  <Button bssize="small" bsstyle="danger">
+                  <Button bsSize="small" bsStyle="danger">
                     {paginatedId}
                   </Button>{' '}
                 </span>
