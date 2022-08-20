@@ -27,7 +27,7 @@ describe('Wallet', () => {
         verifySignature({
           publicKey: wallet.publicKey,
           data,
-          signature: wallet.sign(data),
+          signature: wallet.sign(data)
         })
       ).toBe(true);
     });
@@ -37,7 +37,7 @@ describe('Wallet', () => {
         verifySignature({
           publicKey: wallet.publicKey,
           data,
-          signature: new Wallet().sign(data),
+          signature: new Wallet().sign(data)
         })
       ).toBe(false);
     });
@@ -46,12 +46,8 @@ describe('Wallet', () => {
   describe('createTransaction()', () => {
     describe('and the amount exceeds the balance', () => {
       it('throws an error', () => {
-        expect(() =>
-          wallet.createTransaction({
-            amount: 999999,
-            recipient: 'foo-recipient',
-          })
-        ).toThrow('Amount exceeds balance');
+        expect(() => wallet.createTransaction({ amount: 999999, recipient: 'foo-recipient' }))
+          .toThrow('Amount exceeds balance');
       });
     });
 
@@ -88,7 +84,7 @@ describe('Wallet', () => {
         wallet.createTransaction({
           recipient: 'foo',
           amount: 10,
-          chain: new Blockchain().chain,
+          chain: new Blockchain().chain
         });
 
         expect(calculateBalanceMock).toHaveBeenCalled();
@@ -110,7 +106,7 @@ describe('Wallet', () => {
         expect(
           Wallet.calculateBalance({
             chain: blockchain.chain,
-            address: wallet.publicKey,
+            address: wallet.publicKey
           })
         ).toEqual(STARTING_BALANCE);
       });
@@ -122,12 +118,12 @@ describe('Wallet', () => {
       beforeEach(() => {
         transactionOne = new Wallet().createTransaction({
           recipient: wallet.publicKey,
-          amount: 50,
+          amount: 50
         });
 
         transactionTwo = new Wallet().createTransaction({
           recipient: wallet.publicKey,
-          amount: 60,
+          amount: 60
         });
 
         blockchain.addBlock({ data: [transactionOne, transactionTwo] });
@@ -137,22 +133,23 @@ describe('Wallet', () => {
         expect(
           Wallet.calculateBalance({
             chain: blockchain.chain,
-            address: wallet.publicKey,
+            address: wallet.publicKey
           })
         ).toEqual(
           STARTING_BALANCE +
-            transactionOne.outputMap[wallet.publicKey] +
-            transactionTwo.outputMap[wallet.publicKey]
+          transactionOne.outputMap[wallet.publicKey] +
+          transactionTwo.outputMap[wallet.publicKey]
         );
       });
 
       describe('and the wallet has made a transaction', () => {
         let recentTransaction;
 
+
         beforeEach(() => {
           recentTransaction = wallet.createTransaction({
             recipient: 'foo-address',
-            amount: 30,
+            amount: 30
           });
 
           blockchain.addBlock({ data: [recentTransaction] });
@@ -162,7 +159,7 @@ describe('Wallet', () => {
           expect(
             Wallet.calculateBalance({
               chain: blockchain.chain,
-              address: wallet.publicKey,
+              address: wallet.publicKey
             })
           ).toEqual(recentTransaction.outputMap[wallet.publicKey]);
         });
@@ -173,20 +170,15 @@ describe('Wallet', () => {
           beforeEach(() => {
             recentTransaction = wallet.createTransaction({
               recipient: 'later-foo-address',
-              amount: 60,
+              amount: 60
             });
 
-            sameBlockTransaction = Transaction.rewardTransaction({
-              minerWallet: wallet,
-            });
+            sameBlockTransaction = Transaction.rewardTransaction({ minerWallet: wallet });
 
-            blockchain.addBlock({
-              data: [recentTransaction, sameBlockTransaction],
-            });
+            blockchain.addBlock({ data: [recentTransaction, sameBlockTransaction] });
 
             nextBlockTransaction = new Wallet().createTransaction({
-              recipient: wallet.publicKey,
-              amount: 75,
+              recipient: wallet.publicKey, amount: 75
             });
 
             blockchain.addBlock({ data: [nextBlockTransaction] });
@@ -196,12 +188,12 @@ describe('Wallet', () => {
             expect(
               Wallet.calculateBalance({
                 chain: blockchain.chain,
-                address: wallet.publicKey,
+                address: wallet.publicKey
               })
             ).toEqual(
               recentTransaction.outputMap[wallet.publicKey] +
-                sameBlockTransaction.outputMap[wallet.publicKey] +
-                nextBlockTransaction.outputMap[wallet.publicKey]
+              sameBlockTransaction.outputMap[wallet.publicKey] +
+              nextBlockTransaction.outputMap[wallet.publicKey]
             );
           });
         });

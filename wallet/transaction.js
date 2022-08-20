@@ -5,10 +5,8 @@ const { REWARD_INPUT, MINING_REWARD } = require('../config');
 class Transaction {
   constructor({ senderWallet, recipient, amount, outputMap, input }) {
     this.id = uuid();
-    this.outputMap =
-      outputMap || this.createOutputMap({ senderWallet, recipient, amount });
-    this.input =
-      input || this.createInput({ senderWallet, outputMap: this.outputMap });
+    this.outputMap = outputMap || this.createOutputMap({ senderWallet, recipient, amount });
+    this.input = input || this.createInput({ senderWallet, outputMap: this.outputMap });
   }
 
   createOutputMap({ senderWallet, recipient, amount }) {
@@ -25,9 +23,10 @@ class Transaction {
       timestamp: Date.now(),
       amount: senderWallet.balance,
       address: senderWallet.publicKey,
-      signature: senderWallet.sign(outputMap),
+      signature: senderWallet.sign(outputMap)
     };
   }
+
   update({ senderWallet, recipient, amount }) {
     if (amount > this.outputMap[senderWallet.publicKey]) {
       throw new Error('Amount exceeds balance');
@@ -46,14 +45,10 @@ class Transaction {
   }
 
   static validTransaction(transaction) {
-    const {
-      input: { address, amount, signature },
-      outputMap,
-    } = transaction;
+    const { input: { address, amount, signature }, outputMap } = transaction;
 
-    const outputTotal = Object.values(outputMap).reduce(
-      (total, outputAmount) => total + outputAmount
-    );
+    const outputTotal = Object.values(outputMap)
+      .reduce((total, outputAmount) => total + outputAmount);
 
     if (amount !== outputTotal) {
       console.error(`Invalid transaction from ${address}`);
@@ -71,7 +66,7 @@ class Transaction {
   static rewardTransaction({ minerWallet }) {
     return new this({
       input: REWARD_INPUT,
-      outputMap: { [minerWallet.publicKey]: MINING_REWARD },
+      outputMap: { [minerWallet.publicKey]: MINING_REWARD }
     });
   }
 }

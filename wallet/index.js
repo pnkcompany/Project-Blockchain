@@ -12,14 +12,14 @@ class Wallet {
   }
 
   sign(data) {
-    return this.keyPair.sign(cryptoHash(data));
+    return this.keyPair.sign(cryptoHash(data))
   }
 
   createTransaction({ recipient, amount, chain }) {
     if (chain) {
       this.balance = Wallet.calculateBalance({
         chain,
-        address: this.publicKey,
+        address: this.publicKey
       });
     }
 
@@ -34,7 +34,7 @@ class Wallet {
     let hasConductedTransaction = false;
     let outputsTotal = 0;
 
-    for (let i = chain.length - 1; i > 0; i--) {
+    for (let i=chain.length-1; i>0; i--) {
       const block = chain[i];
 
       for (let transaction of block.data) {
@@ -54,10 +54,8 @@ class Wallet {
       }
     }
 
-    return hasConductedTransaction
-      ? outputsTotal
-      : STARTING_BALANCE + outputsTotal;
+    return hasConductedTransaction ? outputsTotal : STARTING_BALANCE + outputsTotal;
   }
-}
+};
 
 module.exports = Wallet;

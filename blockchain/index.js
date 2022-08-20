@@ -11,8 +11,8 @@ class Blockchain {
 
   addBlock({ data }) {
     const newBlock = Block.mineBlock({
-      lastBlock: this.chain[this.chain.length - 1],
-      data,
+      lastBlock: this.chain[this.chain.length-1],
+      data
     });
 
     this.chain.push(newBlock);
@@ -40,7 +40,7 @@ class Blockchain {
   }
 
   validTransactionData({ chain }) {
-    for (let i = 1; i < chain.length; i++) {
+    for (let i=1; i<chain.length; i++) {
       const block = chain[i];
       const transactionSet = new Set();
       let rewardTransactionCount = 0;
@@ -66,7 +66,7 @@ class Blockchain {
 
           const trueBalance = Wallet.calculateBalance({
             chain: this.chain,
-            address: transaction.input.address,
+            address: transaction.input.address
           });
 
           if (transaction.input.amount !== trueBalance) {
@@ -75,9 +75,7 @@ class Blockchain {
           }
 
           if (transactionSet.has(transaction)) {
-            console.error(
-              'An identical transaction appears more than once in the block'
-            );
+            console.error('An identical transaction appears more than once in the block');
             return false;
           } else {
             transactionSet.add(transaction);
@@ -91,23 +89,17 @@ class Blockchain {
 
   static isValidChain(chain) {
     if (JSON.stringify(chain[0]) !== JSON.stringify(Block.genesis())) {
-      return false;
-    }
+      return false
+    };
 
-    for (let i = 1; i < chain.length; i++) {
+    for (let i=1; i<chain.length; i++) {
       const { timestamp, lastHash, hash, nonce, difficulty, data } = chain[i];
-      const actualLastHash = chain[i - 1].hash;
-      const lastDifficulty = chain[i - 1].difficulty;
+      const actualLastHash = chain[i-1].hash;
+      const lastDifficulty = chain[i-1].difficulty;
 
       if (lastHash !== actualLastHash) return false;
 
-      const validatedHash = cryptoHash(
-        timestamp,
-        lastHash,
-        data,
-        nonce,
-        difficulty
-      );
+      const validatedHash = cryptoHash(timestamp, lastHash, data, nonce, difficulty);
 
       if (hash !== validatedHash) return false;
 

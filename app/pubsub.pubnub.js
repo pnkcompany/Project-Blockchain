@@ -1,15 +1,15 @@
 const PubNub = require('pubnub');
 
 const credentials = {
-  publishKey: 'pub-c-98c49560-3f9b-4433-9b31-75c07ba7f4be',
-  subscribeKey: 'sub-c-e246441c-1f32-4fde-96d9-9807d707739a',
-  secretKey: 'sec-c-ZDQ4MTg2YTctYjZkMS00MjNmLWFhNDUtMmJhNDZiZDRiZmY0',
+  publishKey: 'pub-c-ec30f7ec-578f-4aa2-81c8-59077fb942c4',
+  subscribeKey: 'sub-c-eda4e664-027b-11e9-a39c-e60c31199fb2',
+  secretKey: 'sec-c-OWQwMTg1MGMtY2U2YS00ZmVlLWE1YmEtOTVmMWZmN2ZiOWVm'
 };
 
 const CHANNELS = {
   TEST: 'TEST',
   BLOCKCHAIN: 'BLOCKCHAIN',
-  TRANSACTION: 'TRANSACTION',
+  TRANSACTION: 'TRANSACTION'
 };
 
 class PubSub {
@@ -28,55 +28,51 @@ class PubSub {
   broadcastChain() {
     this.publish({
       channel: CHANNELS.BLOCKCHAIN,
-      message: JSON.stringify(this.blockchain.chain),
+      message: JSON.stringify(this.blockchain.chain)
     });
   }
 
   broadcastTransaction(transaction) {
     this.publish({
       channel: CHANNELS.TRANSACTION,
-      message: JSON.stringify(transaction),
+      message: JSON.stringify(transaction)
     });
   }
 
   subscribeToChannels() {
     this.pubnub.subscribe({
-      channels: [Object.values(CHANNELS)],
+      channels: [Object.values(CHANNELS)]
     });
   }
 
   listener() {
     return {
-      message: (messageObject) => {
+      message: messageObject => {
         const { channel, message } = messageObject;
 
-        console.log(
-          `Message received. Channel: ${channel}. Message: ${message}`
-        );
+        console.log(`Message received. Channel: ${channel}. Message: ${message}`);
         const parsedMessage = JSON.parse(message);
 
-        switch (channel) {
+        switch(channel) {
           case CHANNELS.BLOCKCHAIN:
             this.blockchain.replaceChain(parsedMessage, true, () => {
-              this.transactionPool.clearBlockchainTransactions({
-                chain: parsedMessage,
-              });
+              this.transactionPool.clearBlockchainTransactions(
+                { chain: parsedMessage.chain }
+              );
             });
             break;
           case CHANNELS.TRANSACTION:
-            if (
-              !this.transactionPool.existingTransaction({
-                inputAddress: this.wallet.publicKey,
-              })
-            ) {
+            if (!this.transactionPool.existingTransaction({
+              inputAddress: this.wallet.publicKey
+            })) {
               this.transactionPool.setTransaction(parsedMessage);
             }
             break;
           default:
             return;
         }
-      },
-    };
+      }
+    }
   }
 
   publish({ channel, message }) {
@@ -89,14 +85,14 @@ class PubSub {
   broadcastChain() {
     this.publish({
       channel: CHANNELS.BLOCKCHAIN,
-      message: JSON.stringify(this.blockchain.chain),
+      message: JSON.stringify(this.blockchain.chain)
     });
   }
 
   broadcastTransaction(transaction) {
     this.publish({
       channel: CHANNELS.TRANSACTION,
-      message: JSON.stringify(transaction),
+      message: JSON.stringify(transaction)
     });
   }
 }

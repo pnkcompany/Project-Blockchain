@@ -10,9 +10,9 @@ const TransactionMiner = require('./app/transaction-miner');
 
 const isDevelopment = process.env.ENV === 'development';
 
-const REDIS_URL = isDevelopment
-  ? 'redis://127.0.0.1:6379'
-  : 'redis://:p1806b4c1659fa5def346e3a3a7304135a3b78a1e90e91df4d909ec291149afbb@ec2-52-86-129-199.compute-1.amazonaws.com:18260';
+const REDIS_URL = isDevelopment ?
+  'redis://127.0.0.1:6379' :
+  'redis://h:p05f9a274bd0e2414e52cb9516f8cbcead154d7d61502d32d9750180836a7cc05@ec2-34-225-229-4.compute-1.amazonaws.com:19289'
 const DEFAULT_PORT = 3000;
 const ROOT_NODE_ADDRESS = `http://localhost:${DEFAULT_PORT}`;
 
@@ -22,12 +22,7 @@ const transactionPool = new TransactionPool();
 const wallet = new Wallet();
 const pubsub = new PubSub({ blockchain, transactionPool, redisUrl: REDIS_URL });
 // const pubsub = new PubSub({ blockchain, transactionPool, wallet }); // for PubNub
-const transactionMiner = new TransactionMiner({
-  blockchain,
-  transactionPool,
-  wallet,
-  pubsub,
-});
+const transactionMiner = new TransactionMiner({ blockchain, transactionPool, wallet, pubsub });
 
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'client/dist')));
@@ -46,7 +41,7 @@ app.get('/api/blocks/:id', (req, res) => {
 
   const blocksReversed = blockchain.chain.slice().reverse();
 
-  let startIndex = (id - 1) * 5;
+  let startIndex = (id-1) * 5;
   let endIndex = id * 5;
 
   startIndex = startIndex < length ? startIndex : length;
@@ -68,9 +63,8 @@ app.post('/api/mine', (req, res) => {
 app.post('/api/transact', (req, res) => {
   const { amount, recipient } = req.body;
 
-  let transaction = transactionPool.existingTransaction({
-    inputAddress: wallet.publicKey,
-  });
+  let transaction = transactionPool
+    .existingTransaction({ inputAddress: wallet.publicKey });
 
   try {
     if (transaction) {
@@ -79,10 +73,10 @@ app.post('/api/transact', (req, res) => {
       transaction = wallet.createTransaction({
         recipient,
         amount,
-        chain: blockchain.chain,
+        chain: blockchain.chain
       });
     }
-  } catch (error) {
+  } catch(error) {
     return res.status(400).json({ type: 'error', message: error.message });
   }
 
@@ -108,7 +102,7 @@ app.get('/api/wallet-info', (req, res) => {
 
   res.json({
     address,
-    balance: Wallet.calculateBalance({ chain: blockchain.chain, address }),
+    balance: Wallet.calculateBalance({ chain: blockchain.chain, address })
   });
 });
 
@@ -119,7 +113,7 @@ app.get('/api/known-addresses', (req, res) => {
     for (let transaction of block.data) {
       const recipient = Object.keys(transaction.outputMap);
 
-      recipient.forEach((recipient) => (addressMap[recipient] = recipient));
+      recipient.forEach(recipient => addressMap[recipient] = recipient);
     }
   }
 
@@ -131,32 +125,23 @@ app.get('*', (req, res) => {
 });
 
 const syncWithRootState = () => {
-  request(
-    { url: `${ROOT_NODE_ADDRESS}/api/blocks` },
-    (error, response, body) => {
-      if (!error && response.statusCode === 200) {
-        const rootChain = JSON.parse(body);
+  request({ url: `${ROOT_NODE_ADDRESS}/api/blocks` }, (error, response, body) => {
+    if (!error && response.statusCode === 200) {
+      const rootChain = JSON.parse(body);
 
-        console.log('replace chain on a sync with', rootChain);
-        blockchain.replaceChain(rootChain);
-      }
+      console.log('replace chain on a sync with', rootChain);
+      blockchain.replaceChain(rootChain);
     }
-  );
+  });
 
-  request(
-    { url: `${ROOT_NODE_ADDRESS}/api/transaction-pool-map` },
-    (error, response, body) => {
-      if (!error && response.statusCode === 200) {
-        const rootTransactionPoolMap = JSON.parse(body);
+  request({ url: `${ROOT_NODE_ADDRESS}/api/transaction-pool-map` }, (error, response, body) => {
+    if (!error && response.statusCode === 200) {
+      const rootTransactionPoolMap = JSON.parse(body);
 
-        console.log(
-          'replace transaction pool map on a sync with',
-          rootTransactionPoolMap
-        );
-        transactionPool.setMap(rootTransactionPoolMap);
-      }
+      console.log('replace transaction pool map on a sync with', rootTransactionPoolMap);
+      transactionPool.setMap(rootTransactionPoolMap);
     }
-  );
+  });
 };
 
 if (isDevelopment) {
@@ -165,40 +150,29 @@ if (isDevelopment) {
 
   const generateWalletTransaction = ({ wallet, recipient, amount }) => {
     const transaction = wallet.createTransaction({
-      recipient,
-      amount,
-      chain: blockchain.chain,
+      recipient, amount, chain: blockchain.chain
     });
 
     transactionPool.setTransaction(transaction);
   };
 
-  const walletAction = () =>
-    generateWalletTransaction({
-      wallet,
-      recipient: walletFoo.publicKey,
-      amount: 5,
-    });
+  const walletAction = () => generateWalletTransaction({
+    wallet, recipient: walletFoo.publicKey, amount: 5
+  });
 
-  const walletFooAction = () =>
-    generateWalletTransaction({
-      wallet: walletFoo,
-      recipient: walletBar.publicKey,
-      amount: 10,
-    });
+  const walletFooAction = () => generateWalletTransaction({
+    wallet: walletFoo, recipient: walletBar.publicKey, amount: 10
+  });
 
-  const walletBarAction = () =>
-    generateWalletTransaction({
-      wallet: walletBar,
-      recipient: wallet.publicKey,
-      amount: 15,
-    });
+  const walletBarAction = () => generateWalletTransaction({
+    wallet: walletBar, recipient: wallet.publicKey, amount: 15
+  });
 
-  for (let i = 0; i < 20; i++) {
-    if (i % 3 === 0) {
+  for (let i=0; i<20; i++) {
+    if (i%3 === 0) {
       walletAction();
       walletFooAction();
-    } else if (i % 3 === 1) {
+    } else if (i%3 === 1) {
       walletAction();
       walletBarAction();
     } else {
